@@ -2,9 +2,12 @@ import pandas as pd
 from dash import Dash, html, dcc, Input, Output
 import math
 
-
-def update_data_and_layout():
+# Function to read and process data
+def update_data_and_layout(selected_event=None):
     df = pd.read_csv("../booking_data.csv")
+
+    if selected_event:
+        df = df[df["Event Name"] == selected_event]
 
     total_forecast = df["Forecast"].sum()
     total_booked = df["Rooms Booked"].sum()
@@ -65,21 +68,35 @@ def update_data_and_layout():
 # Initialize Dash app
 app = Dash(__name__, external_stylesheets=['/assets/styles.css'])
 
-app.layout = update_data_and_layout()
+# Read data to populate the dropdown
+df = pd.read_csv("../booking_data.csv")
+event_names = df["Event Name"].unique()
 
-app.callback(
-    Output('square-container', 'children'),
-    [Input('interval-component', 'n_intervals')]
-)(lambda _: update_data_and_layout())
-
+# App layout with dropdown for event selection and initial data display
 app.layout = html.Div([
+    dcc.Dropdown(
+        id='event-dropdown',
+        options=[{'label': name, 'value': name} for name in event_names],
+        placeholder="Select an Event",
+        style={'width': '50%'}
+    ),
+    html.Div(id='content'),
     dcc.Interval(
         id='interval-component',
         interval=60 * 1000,  # in milliseconds
         n_intervals=0
-    ),
-    html.Div(id='square-container')
+    )
 ])
+
+# Callback to update the display based on the selected event
+@app.callback(
+    Output('content', 'children'),
+    [Input('event-dropdown', 'value'), Input('interval-component', 'n_intervals')]
+)
+def display_event(selected_event, n_intervals):
+    if selected_event:
+        return update_data_and_layout(selected_event)
+    return update_data_and_layout()
 
 if __name__ == '__main__':
     app.run_server(debug=True, dev_tools_ui=False)
