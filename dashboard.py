@@ -26,13 +26,12 @@ def update_data_and_layout(selected_event=None):
     columns, rows = calculate_grid_dimensions(total_forecast)
 
     # Create squares with colors
-    def create_square(color, animation_delay):
+    def create_square(color):
         return html.Div(
             className='square ' + ('filled' if color == 'black' else ''),
             style={
                 'background-color': color,
                 'border': '0.1px solid white',
-                'animation-delay': f'{animation_delay}s'
             }
         )
 
@@ -43,11 +42,10 @@ def update_data_and_layout(selected_event=None):
         return (rows - row) + col
 
     # Fill the squares diagonally from bottom left to top right based on current data
-    squares = [create_square('grey', 0) for _ in range(total_forecast)]
+    squares = [create_square('grey') for _ in range(total_forecast)]
     filled_indices = sorted(range(total_forecast), key=lambda i: calculate_diagonal_index(i, columns, rows))
     for i in range(min(total_booked, total_forecast)):
-        delay = i * 0.01
-        squares[filled_indices[i]] = create_square('black', delay)
+        squares[filled_indices[i]] = create_square('black')
 
     return html.Div(
         style={'height': '100vh', 'width': '100vw', 'margin': '0', 'padding': '0'},
@@ -80,7 +78,7 @@ app.layout = html.Div([
         id='event-dropdown',
         options=dropdown_options,
         placeholder="Select an Event",
-        style={'width': '50%', 'position': 'absolute', 'top': '10px', 'left': '50%', 'transform': 'translateX(-50%)', 'z-index': 1000}
+        style={'width': '50%', 'position': 'absolute', 'top': '10px', 'left': '50%', 'transform': 'translateX(-50%)', 'z-index': 1000, 'background-color': 'rgba(255, 255, 255, 0.8)'}
     ),
     html.Div(id='content'),
     dcc.Interval(

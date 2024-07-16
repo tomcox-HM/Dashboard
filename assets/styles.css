@@ -13,38 +13,7 @@ body {
     transition: background-color 0.5s, border 0.5s; /* Smooth transition for color change */
 }
 
-.square.filled {
-    animation: fill 0.1s forwards;
-}
-
-@keyframes fill {
-    from {
-        background-color: grey;
-    }
-    to {
-        background-color: black;
-    }
-}
-
 #square-container {
     display: grid;
     gap: 1px; /* Add a gap between squares */
-}
-
-.running-total {
-    position: absolute;
-    color: rgb(248, 0, 0);
-    font-size: 24px;
-    font-weight: bold;
-    z-index: 10; /* Ensures totals appear above other elements */
-}
-
-#rooms-booked {
-    bottom: 20px;
-    left: 20px;
-}
-
-#percentage-forecast {
-    top: 20px;
-    right: 20px;
 }
