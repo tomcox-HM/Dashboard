@@ -2,7 +2,6 @@ import pandas as pd
 from dash import Dash, html, dcc, Input, Output
 import math
 
-
 # Function to read and process data
 def update_data_and_layout(selected_event=None):
     df = pd.read_csv("../booking_data.csv")
@@ -35,15 +34,28 @@ def update_data_and_layout(selected_event=None):
             }
         )
 
-    # Calculate diagonal index for filling squares
-    def calculate_diagonal_index(index, columns, rows):
+    def calculate_quadrilateral_index(index, columns, rows):
+        # Calculate the aspect ratio dynamically
+        aspect_ratio = columns / rows
+        
+        # Calculate row and column indices
         row = index // columns
         col = index % columns
-        return (rows - row) + col
+        
+        # Calculate the maximum row index for the current column based on aspect ratio
+        max_row = int((columns - col + 1) * aspect_ratio)
+        
+        # Ensure the row index does not exceed the maximum allowable row
+        row = min(row, max_row)
+        
+        # Calculate the final index from bottom left to top right
+        return (rows - 1 - row) * columns + col
 
-    # Fill the squares diagonally from bottom left to top right based on current data
+    # Assuming total_forecast, total_booked, columns, and rows are defined elsewhere
     squares = [create_square('grey') for _ in range(total_forecast)]
-    filled_indices = sorted(range(total_forecast), key=lambda i: calculate_diagonal_index(i, columns, rows))
+    filled_indices = sorted(range(total_forecast), key=lambda i: calculate_quadrilateral_index(i, columns, rows))
+
+    # Fill squares based on the calculated order
     for i in range(min(total_booked, total_forecast)):
         squares[filled_indices[i]] = create_square('black')
 
