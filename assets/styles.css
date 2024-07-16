@@ -1,10 +1,50 @@
-/* assets/styles.css */
+/* styles.css */
 
-.square {
-    width: 100%;
-    height: 100%;
-    border: 0.1px solid rgb(236, 233, 233);
-    box-sizing: border-box;
-    background-color: rgb(119, 117, 117);
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
 }
 
+.square {
+    width: 100%; /* Ensures squares fill the grid cell */
+    height: 100%; /* Ensures squares fill the grid cell */
+    transition: background-color 0.5s, border 0.5s; /* Smooth transition for color change */
+}
+
+.square.filled {
+    animation: fill 0.1s forwards;
+}
+
+@keyframes fill {
+    from {
+        background-color: grey;
+    }
+    to {
+        background-color: black;
+    }
+}
+
+#square-container {
+    display: grid;
+    gap: 1px; /* Add a gap between squares */
+}
+
+.running-total {
+    position: absolute;
+    color: rgb(248, 0, 0);
+    font-size: 24px;
+    font-weight: bold;
+    z-index: 10; /* Ensures totals appear above other elements */
+}
+
+#rooms-booked {
+    bottom: 20px;
+    left: 20px;
+}
+
+#percentage-forecast {
+    top: 20px;
+    right: 20px;
+}

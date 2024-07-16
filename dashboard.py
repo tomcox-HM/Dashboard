@@ -2,11 +2,12 @@ import pandas as pd
 from dash import Dash, html, dcc, Input, Output
 import math
 
+
 # Function to read and process data
 def update_data_and_layout(selected_event=None):
     df = pd.read_csv("../booking_data.csv")
 
-    if selected_event:
+    if selected_event and selected_event != "Overview":
         df = df[df["Event Name"] == selected_event]
 
     total_forecast = df["Forecast"].sum()
@@ -71,14 +72,15 @@ app = Dash(__name__, external_stylesheets=['/assets/styles.css'])
 # Read data to populate the dropdown
 df = pd.read_csv("../booking_data.csv")
 event_names = df["Event Name"].unique()
+dropdown_options = [{'label': 'Overview', 'value': 'Overview'}] + [{'label': name, 'value': name} for name in event_names]
 
-# App layout with dropdown for event selection and initial data display
+# App layout with a floating dropdown for event selection and initial data display
 app.layout = html.Div([
     dcc.Dropdown(
         id='event-dropdown',
-        options=[{'label': name, 'value': name} for name in event_names],
+        options=dropdown_options,
         placeholder="Select an Event",
-        style={'width': '50%'}
+        style={'width': '50%', 'position': 'absolute', 'top': '10px', 'left': '50%', 'transform': 'translateX(-50%)', 'z-index': 1000}
     ),
     html.Div(id='content'),
     dcc.Interval(
