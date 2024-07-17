@@ -2,17 +2,16 @@ import pandas as pd
 import math
 from dash import Dash, html, dcc, Input, Output, callback_context
 
+data_file = "../booking_data_sep_dec.csv"
+data_file_label = "September 2024 - December 2024"
+
 def calculate_grid_dimensions(total_forecast):
     aspect_ratio = 16 / 9
-
-    # Use a square root approach to get close to the aspect ratio
     sqrt_total = math.sqrt(total_forecast)
     width = math.ceil(sqrt_total * math.sqrt(aspect_ratio))
     height = math.ceil(sqrt_total / math.sqrt(aspect_ratio))
-
     return width, height
 
-# Create squares with colors
 def create_square(color):
     return html.Div(
         className='square ' + ('filled' if color == 'black' else ''),
@@ -23,57 +22,46 @@ def create_square(color):
     )
 
 def calculate_quadrilateral_index(index, columns, rows):
-    # Calculate the aspect ratio dynamically
     aspect_ratio = 3/5
-    
-    # Calculate row and column indices
     row = index // columns
     col = index % columns
-    
-    # Calculate the maximum row index for the current column based on aspect ratio
     max_row = int((columns - col + 1) * aspect_ratio)
-    
-    # Ensure the row index does not exceed the maximum allowable row
     row = min(row, max_row)
-    
-    # Calculate the final index from bottom left to top right
     return (rows - 1 - row) * columns + col
 
 def fill_squares(forecast, booked, columns, rows):
     if forecast > 25000:
         multiplier = 1
     else:
-        # Calculate the number of squares needed to fill the entire grid
         total_squares = columns * rows
-        
-        # Calculate the multiplier to adjust forecast
         multiplier = (total_squares // forecast) + 1
     
-    # Adjust forecast to be a multiple of total_squares
     forecast = forecast * multiplier
     booked = booked * multiplier
     squares = [create_square('grey') for _ in range(forecast)]
     filled_indices = sorted(range(forecast), key=lambda i: calculate_quadrilateral_index(i, columns, rows))
 
-    # Fill squares for the booked rooms
     for i in range(min(booked, forecast)):
         squares[filled_indices[i]] = create_square('black')
 
     return squares
 
-# Function to read and process data for the main dashboard
-def update_overview():
-    df = pd.read_csv("../booking_data_sep_dec.csv")
-
+def update_overview(data_file):
+    df = pd.read_csv(data_file)
     total_forecast = df["Forecast"].sum()
     total_booked = df["Rooms Booked"].sum()
-
     columns, rows = calculate_grid_dimensions(total_forecast)
     squares = fill_squares(total_forecast, total_booked, columns, rows)
 
     return html.Div(
         style={'height': '100vh', 'width': '100vw', 'margin': '0', 'padding': '0'},
         children=[
+            html.Div(
+                style={'position': 'absolute', 'bottom': '10px', 'left': '10px'},
+                children=[
+                    dcc.Link(html.Img(src="/assets/home.png", id='home-button', style={'cursor': 'pointer', 'height': '40px'}), href='/')
+                ]
+            ),
             html.Div(
                 id='square-container',
                 style={
@@ -88,30 +76,21 @@ def update_overview():
         ]
     )
 
-def update_event_view():
-    df = pd.read_csv("../booking_data_sep_dec.csv")
-
-    # Group by event name and sum forecast and booked rooms
+def update_event_view(data_file):
+    df = pd.read_csv(data_file)
     event_data = df.groupby("Event Name").agg({"Forecast": "sum", "Rooms Booked": "sum"}).reset_index()
-
-    # Initialize an empty list to hold the event views
     event_views = []
 
-    # Display all events
-    for idx in range(len(event_data)):  # Displaying all events
+    for idx in range(len(event_data)):
         event_forecast = event_data.loc[idx, "Forecast"]
         event_booked = event_data.loc[idx, "Rooms Booked"]
-
-        # Calculate grid dimensions for the current event
         columns, rows = calculate_grid_dimensions(event_forecast)
-
         squares = fill_squares(event_forecast, event_booked, columns, rows)
 
-        # Create HTML structure for the event view
         event_view_style = {
-            'margin': '1px',  # Add some margin between event blocks
+            'margin': '0.1px',
             'padding': '0',
-            'border': '2px solid rgb(91, 169, 223)',  # Default border style
+            'border': '2px solid rgb(91, 169, 223)',
             'display': 'grid',
             'grid-template-columns': f'repeat({columns}, 10px)',
             'grid-template-rows': f'repeat({rows}, 10px)',
@@ -136,18 +115,26 @@ def update_event_view():
             'flex-wrap': 'wrap',
             'align-content': 'flex-start'
         },
-        children=event_views
+        children=[
+            html.Div(
+                style={'position': 'absolute', 'bottom': '10px', 'left': '10px'},
+                children=[
+                    dcc.Link(html.Img(src="/assets/home.png", id='home-button', style={'cursor': 'pointer', 'height': '40px'}), href='/')
+                ]
+            ),
+            *event_views
+        ]
     )
 
-
-# Initialize Dash app
 app = Dash(__name__, external_stylesheets=['/assets/styles.css'])
 
 home_page_layout = html.Div(
     style={'height': '100vh', 'display': 'flex', 'flex-direction': 'column', 'justify-content': 'center', 'align-items': 'center'},
     children=[
-        html.Button("Go to Dashboard", id='dashboard-button', n_clicks=0, style={'font-size': '24px', 'padding': '10px 20px', 'margin': '10px'}),
-        html.Button("Go to Event View", id='event-view-button', n_clicks=0, style={'font-size': '24px', 'padding': '10px 20px', 'margin': '10px'})
+        html.Button("Go to Overview", id='dashboard-button', n_clicks=0, style={'font-size': '24px', 'padding': '10px 20px', 'margin': '10px', 'color': 'white', 'background-color': 'rgb(91, 169, 223)', 'border': 'none', 'border-radius': '25px'}),
+        html.Button("Go to Event View", id='event-view-button', n_clicks=0, style={'font-size': '24px', 'padding': '10px 20px', 'margin': '10px', 'color': 'white', 'background-color': 'rgb(91, 169, 223)', 'border': 'none', 'border-radius': '25px'}),
+        html.Img(src="assets/target.png", id='target-view-button', n_clicks=0, style={"height": "50px"}),
+        html.H3(id='data-file-label', style={"color": "white"})
     ]
 )
 
@@ -158,7 +145,6 @@ app.layout = html.Div([
     html.Div(id='page-content')
 ])
 
-# Callback to update the page content based on URL
 @app.callback(
     Output('page-content', 'children'),
     Input('url', 'pathname')
@@ -166,10 +152,10 @@ app.layout = html.Div([
 def display_page(pathname):
     if pathname == '/dashboard':
         return html.Div([
-            html.Div(id='content'),
+            update_overview(data_file),
             dcc.Interval(
                 id='interval-component',
-                interval=60 * 1000,  # in milliseconds
+                interval=60 * 1000,
                 n_intervals=0
             )
         ])
@@ -178,7 +164,6 @@ def display_page(pathname):
     else:
         return home_page_layout
 
-# Callback to navigate to the appropriate page when the button is clicked
 @app.callback(
     Output('url', 'pathname'),
     [Input('dashboard-button', 'n_clicks'), Input('event-view-button', 'n_clicks')]
@@ -188,31 +173,38 @@ def go_to_page(dashboard_n_clicks, event_view_n_clicks):
 
     if not ctx.triggered:
         return '/'
-    
+
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    
+
     if button_id == 'dashboard-button' and dashboard_n_clicks > 0:
         return '/dashboard'
     elif button_id == 'event-view-button' and event_view_n_clicks > 0:
         return '/event-view'
     return '/'
 
-# Callback to update the display based on the interval
 @app.callback(
-    Output('content', 'children'),
-    Input('interval-component', 'n_intervals')
+    Output('data-file-label', 'children'),
+    Input('target-view-button', 'n_clicks')
 )
-def display_event(n_intervals):
-    return update_overview()
+def update_data_file(n_clicks):
+    global data_file, data_file_label
+    if n_clicks is None:
+        return data_file_label
+    elif n_clicks % 2 != 0:
+        data_file = "../booking_data_jan_apr.csv"
+        data_file_label = "January 2025 - April 2025"
+    else:
+        data_file = "../booking_data_sep_dec.csv"
+        data_file_label = "September 2024 - December 2024"
+    return data_file_label
 
-# Callback to update the event view
 @app.callback(
     Output('event-view-content', 'children'),
     Input('url', 'pathname')
 )
 def display_event_view(pathname):
     if pathname == '/event-view':
-        return update_event_view()
+        return update_event_view(data_file)
     return ""
 
 if __name__ == '__main__':
