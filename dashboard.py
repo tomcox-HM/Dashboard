@@ -81,9 +81,8 @@ def update_event_view(data_file):
     event_data = df.groupby("Event Name").agg({"Forecast": "sum", "Rooms Booked": "sum"}).reset_index()
     total_events = len(event_data)
 
-    max_columns = 15  # Set the number of columns to 13
-    max_rows = 10     # Set the number of rows to 12
-
+    max_rows = 10
+    max_columns = int(total_events / max_rows)
     event_views = []
 
     for idx in range(total_events):
@@ -93,7 +92,7 @@ def update_event_view(data_file):
         squares = fill_squares(event_forecast, event_booked, columns, rows)
 
         event_view_style = {
-            'border': '2px solid rgb(91, 169, 223)',
+            'border': '2px solid white',
             'display': 'grid',
             'grid-template-columns': f'repeat({columns}, 1fr)',
             'grid-template-rows': f'repeat({rows}, 1fr)',
