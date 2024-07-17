@@ -12,20 +12,19 @@ def calculate_grid_dimensions(total_forecast):
 
     return width, height
 
-
 # Create squares with colors
 def create_square(color):
     return html.Div(
         className='square ' + ('filled' if color == 'black' else ''),
         style={
             'background-color': color,
-            'border': '0.1px solid white',
+            'border': '0',
         }
     )
 
 def calculate_quadrilateral_index(index, columns, rows):
     # Calculate the aspect ratio dynamically
-    aspect_ratio = columns / rows
+    aspect_ratio = 3/5
     
     # Calculate row and column indices
     row = index // columns
@@ -40,22 +39,37 @@ def calculate_quadrilateral_index(index, columns, rows):
     # Calculate the final index from bottom left to top right
     return (rows - 1 - row) * columns + col
 
+def fill_squares(forecast, booked, columns, rows):
+    if forecast > 25000:
+        multiplier = 1
+    else:
+        # Calculate the number of squares needed to fill the entire grid
+        total_squares = columns * rows
+        
+        # Calculate the multiplier to adjust forecast
+        multiplier = (total_squares // forecast) + 1
+    
+    # Adjust forecast to be a multiple of total_squares
+    forecast = forecast * multiplier
+    booked = booked * multiplier
+    squares = [create_square('grey') for _ in range(forecast)]
+    filled_indices = sorted(range(forecast), key=lambda i: calculate_quadrilateral_index(i, columns, rows))
+
+    # Fill squares for the booked rooms
+    for i in range(min(booked, forecast)):
+        squares[filled_indices[i]] = create_square('black')
+
+    return squares
+
 # Function to read and process data for the main dashboard
 def update_overview():
-    df = pd.read_csv("../booking_data.csv")
+    df = pd.read_csv("../booking_data_sep_dec.csv")
 
     total_forecast = df["Forecast"].sum()
     total_booked = df["Rooms Booked"].sum()
 
     columns, rows = calculate_grid_dimensions(total_forecast)
-
-    # Assuming total_forecast, total_booked, columns, and rows are defined elsewhere
-    squares = [create_square('grey') for _ in range(total_forecast)]
-    filled_indices = sorted(range(total_forecast), key=lambda i: calculate_quadrilateral_index(i, columns, rows))
-
-    # Fill squares based on the calculated order
-    for i in range(min(total_booked, total_forecast)):
-        squares[filled_indices[i]] = create_square('black')
+    squares = fill_squares(total_forecast, total_booked, columns, rows)
 
     return html.Div(
         style={'height': '100vh', 'width': '100vw', 'margin': '0', 'padding': '0'},
@@ -75,7 +89,7 @@ def update_overview():
     )
 
 def update_event_view():
-    df = pd.read_csv("../booking_data.csv")
+    df = pd.read_csv("../booking_data_sep_dec.csv")
 
     # Group by event name and sum forecast and booked rooms
     event_data = df.groupby("Event Name").agg({"Forecast": "sum", "Rooms Booked": "sum"}).reset_index()
@@ -91,50 +105,32 @@ def update_event_view():
         # Calculate grid dimensions for the current event
         columns, rows = calculate_grid_dimensions(event_forecast)
 
-        # Create squares for the current event
-        squares = []
-
-        for r in range(rows):
-            for c in range(columns):
-                if r * columns + c < event_forecast:
-                    if r * columns + c < event_booked:
-                        squares.append(create_square('black'))
-                    else:
-                        squares.append(create_square('grey'))
-                else:
-                    squares.append(create_square('grey'))
+        squares = fill_squares(event_forecast, event_booked, columns, rows)
 
         # Create HTML structure for the event view
+        event_view_style = {
+            'margin': '1px',  # Add some margin between event blocks
+            'padding': '0',
+            'border': '2px solid rgb(91, 169, 223)',  # Default border style
+            'display': 'grid',
+            'grid-template-columns': f'repeat({columns}, 10px)',
+            'grid-template-rows': f'repeat({rows}, 10px)',
+            'width': f'{columns * 10}px',
+            'height': f'{rows * 10}px',
+        }
+
         event_view = html.Div(
-            style={
-                'height': f'{rows * 10}px',  # Ensure the height is proportional to the number of rows
-                'width': f'{columns * 10}px',  # Ensure the width is proportional to the number of columns
-                'margin': '10px',  # Add some margin between event blocks
-                'padding': '0',
-                'border': '1px solid blue',  # Add a colored border around each event block
-            },
-            children=[
-                html.Div(
-                    id=f'square-container-{idx}',
-                    style={
-                        'display': 'grid',
-                        'grid-template-columns': f'repeat({columns}, 10px)',
-                        'grid-template-rows': f'repeat({rows}, 10px)',
-                        'width': f'{columns * 10}px',
-                        'height': f'{rows * 10}px',
-                    },
-                    children=squares
-                )
-            ]
+            style=event_view_style,
+            children=squares
         )
 
         event_views.append(event_view)
 
     return html.Div(
         style={
-            'height': '100vh', 
-            'width': '100vw', 
-            'margin': '0', 
+            'height': '100vh',
+            'width': '100vw',
+            'margin': '0',
             'padding': '0',
             'display': 'flex',
             'flex-wrap': 'wrap',
@@ -142,6 +138,7 @@ def update_event_view():
         },
         children=event_views
     )
+
 
 # Initialize Dash app
 app = Dash(__name__, external_stylesheets=['/assets/styles.css'])
