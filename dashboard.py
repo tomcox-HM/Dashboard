@@ -79,23 +79,26 @@ def update_overview(data_file):
 def update_event_view(data_file):
     df = pd.read_csv(data_file)
     event_data = df.groupby("Event Name").agg({"Forecast": "sum", "Rooms Booked": "sum"}).reset_index()
+    total_events = len(event_data)
+
+    max_columns = 15  # Set the number of columns to 13
+    max_rows = 10     # Set the number of rows to 12
+
     event_views = []
 
-    for idx in range(len(event_data)):
+    for idx in range(total_events):
         event_forecast = event_data.loc[idx, "Forecast"]
         event_booked = event_data.loc[idx, "Rooms Booked"]
         columns, rows = calculate_grid_dimensions(event_forecast)
         squares = fill_squares(event_forecast, event_booked, columns, rows)
 
         event_view_style = {
-            'margin': '0.1px',
-            'padding': '0',
             'border': '2px solid rgb(91, 169, 223)',
             'display': 'grid',
-            'grid-template-columns': f'repeat({columns}, 10px)',
-            'grid-template-rows': f'repeat({rows}, 10px)',
-            'width': f'{columns * 10}px',
-            'height': f'{rows * 10}px',
+            'grid-template-columns': f'repeat({columns}, 1fr)',
+            'grid-template-rows': f'repeat({rows}, 1fr)',
+            'width': f'100vw/15',   # Adjust width based on number of columns
+            'height': f'100vh/10'    # Adjust height based on number of rows
         }
 
         event_view = html.Div(
@@ -107,13 +110,13 @@ def update_event_view(data_file):
 
     return html.Div(
         style={
-            'height': '100vh',
-            'width': '100vw',
+            'height': '100vh',  # Ensure full viewport height
+            'width': '100vw',   # Ensure full viewport width
             'margin': '0',
             'padding': '0',
-            'display': 'flex',
-            'flex-wrap': 'wrap',
-            'align-content': 'flex-start'
+            'display': 'grid',  # Use grid display for event views
+            'grid-template-columns': f'repeat({max_columns}, 1fr)',  # Set exactly 13 columns
+            'grid-template-rows': f'repeat({max_rows}, 1fr)'         # Set exactly 12 rows
         },
         children=[
             html.Div(
@@ -126,15 +129,33 @@ def update_event_view(data_file):
         ]
     )
 
-app = Dash(__name__, external_stylesheets=['/assets/styles.css'])
+app = Dash(__name__, external_stylesheets=[
+    'https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap',
+    '/assets/styles.css'
+])
+
 
 home_page_layout = html.Div(
     style={'height': '100vh', 'display': 'flex', 'flex-direction': 'column', 'justify-content': 'center', 'align-items': 'center'},
     children=[
-        html.Button("Go to Overview", id='dashboard-button', n_clicks=0, style={'font-size': '24px', 'padding': '10px 20px', 'margin': '10px', 'color': 'white', 'background-color': 'rgb(91, 169, 223)', 'border': 'none', 'border-radius': '25px'}),
-        html.Button("Go to Event View", id='event-view-button', n_clicks=0, style={'font-size': '24px', 'padding': '10px 20px', 'margin': '10px', 'color': 'white', 'background-color': 'rgb(91, 169, 223)', 'border': 'none', 'border-radius': '25px'}),
-        html.Img(src="assets/target.png", id='target-view-button', n_clicks=0, style={"height": "50px"}),
-        html.H3(id='data-file-label', style={"color": "white"})
+        html.Div(
+            style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center', 'align-items': 'center'},
+            children=[
+                html.Button("OVERVIEW", id='dashboard-button', n_clicks=0, 
+                            style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
+                                   'background-color': 'rgb(91, 169, 223)', 'border': 'none', 'border-radius': '25px'}),
+                html.Button("EVENT VIEW", id='event-view-button', n_clicks=0, 
+                            style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
+                                   'background-color': 'rgb(91, 169, 223)', 'border': 'none', 'border-radius': '25px'}),     
+            ]
+        ),
+        html.Div(
+            style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center', 'align-items': 'center', 'margin-top': '20px'},
+            children=[
+                html.Img(src="assets/calendar.png", id='calendar-view-button', n_clicks=0, style={"height": "50px", "margin-right": "10px"}),
+                html.H3(id='data-file-label', style={"color": "white", "margin": "0"})
+            ]
+        ),
     ]
 )
 
@@ -184,7 +205,7 @@ def go_to_page(dashboard_n_clicks, event_view_n_clicks):
 
 @app.callback(
     Output('data-file-label', 'children'),
-    Input('target-view-button', 'n_clicks')
+    Input('calendar-view-button', 'n_clicks')
 )
 def update_data_file(n_clicks):
     global data_file, data_file_label
