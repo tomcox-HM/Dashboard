@@ -133,10 +133,15 @@ app = Dash(__name__, external_stylesheets=[
     '/assets/styles.css'
 ])
 
-
 home_page_layout = html.Div(
     style={'height': '100vh', 'display': 'flex', 'flex-direction': 'column', 'justify-content': 'center', 'align-items': 'center'},
     children=[
+        html.Div(
+            style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center', 'align-items': 'center'},
+            children=[
+                html.Img(src="/assets/vroom.png", style={'height': '120px', 'margin-bottom': '40px'}),
+            ]
+        ),
         html.Div(
             style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center', 'align-items': 'center'},
             children=[
