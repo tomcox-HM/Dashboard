@@ -2,8 +2,8 @@ import pandas as pd
 import math
 from dash import Dash, html, dcc, Input, Output, callback_context
 
-data_file = "../booking_data_sep_dec.csv"
-data_file_label = "September 2024 - December 2024"
+#data_file = "../booking_data_sep_dec.csv"
+#data_file_label = "September 2024 - December 2024"
 
 def calculate_grid_dimensions(total_forecast):
     aspect_ratio = 16 / 9
@@ -137,6 +137,12 @@ home_page_layout = html.Div(
     style={'height': '100vh', 'display': 'flex', 'flex-direction': 'column', 'justify-content': 'center', 'align-items': 'center'},
     children=[
         html.Div(
+            style={'position': 'absolute', 'top': '10px', 'left': '10px'},  # Adjusted position to top right corner
+            children=[
+                html.Img(src="/assets/HotelMap-Logo-White.png", style={'height': '20px'})
+            ]
+        ),
+        html.Div(
             style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center', 'align-items': 'center'},
             children=[
                 html.Img(src="/assets/vroom.png", style={'height': '120px', 'margin-bottom': '40px'}),
@@ -233,4 +239,4 @@ def display_event_view(pathname):
     return ""
 
 if __name__ == '__main__':
-    app.run_server(debug=True, dev_tools_ui=False)
+    app.run_server(debug=True, dev_tools_ui=False, host='0.0.0.0', port=8050)
