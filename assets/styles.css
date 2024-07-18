@@ -1,5 +1,3 @@
-/* styles.css */
-
 body {
     margin: 0;
     padding: 0;
@@ -8,12 +6,11 @@ body {
 }
 
 .square {
-    width: 100%; /* Ensures squares fill the grid cell */
-    height: 100%; /* Ensures squares fill the grid cell */
-    transition: background-color 0.5s, border 0.5s; /* Smooth transition for color change */
+    width: 100%;
+    height: 100%;
 }
 
 #square-container {
     display: grid;
-    gap: 1px; /* Add a gap between squares */
+    gap: 0px; /* Add a gap between squares */
 }
