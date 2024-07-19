@@ -41,13 +41,11 @@ def calculate_quadrilateral_index(index, columns, rows):
 def fill_squares(forecast, booked, columns, rows, dataset, page):
     # Determine color based on dataset and page
     color = dataset_colors.get((dataset), 'grey')  # Default to grey if not found
-    
     if forecast > 25000:
         multiplier = 1
     else:
         total_squares = columns * rows
         multiplier = (total_squares // forecast) + 1
-    
     forecast = forecast * multiplier
     booked = booked * multiplier
     squares = [create_square('rgb(191, 191, 191)') for _ in range(forecast)]
@@ -68,6 +66,40 @@ def update_overview(data_file, dataset):
     columns, rows = calculate_grid_dimensions(total_forecast)
     squares = fill_squares(total_forecast, total_booked, columns, rows, dataset, 'overview')
 
+    # Calculate the percentage of rooms booked
+    booked_percentage = total_booked / total_forecast
+
+    # Calculate the dimensions of the booked area
+    booked_width = math.sqrt(booked_percentage * columns * rows * (16 / 9))
+    booked_height = booked_width * (9 / 16)
+
+    # Calculate the top-right position
+    booked_top = (rows - booked_height) * 1.05
+    booked_right = (columns - booked_width) * 1.05
+
+    # Convert to percentages
+    booked_top_percent = booked_top * 100 / rows + 1
+    booked_right_percent = booked_right * 100 / columns
+
+    booked_position_style = {
+        'position': 'absolute',
+        'top': f'{booked_top_percent}%',
+        'right': f'{booked_right_percent}%',
+        'color': 'white',
+        'font-size': '25px',
+        'transform': 'translate(0, 0)'  # No need for translation
+    }
+
+    forecast_text = html.Div(
+        children=f"{total_forecast:,}",
+        style={'position': 'absolute', 'top': '10px', 'right': '10px', 'color': 'white', 'font-size': '25px'}
+    )
+
+    booked_text = html.Div(
+        children=f"{total_booked:,}",
+        style=booked_position_style
+    )
+
     return html.Div(
         style={'height': '100vh', 'width': '100vw', 'margin': '0', 'padding': '0'},
         children=[
@@ -87,7 +119,9 @@ def update_overview(data_file, dataset):
                     'height': '100%'
                 },
                 children=squares
-            )
+            ),
+            booked_text,  # Add the booked text to the layout
+            forecast_text  # Add the forecast text to the layout
         ]
     )
 
