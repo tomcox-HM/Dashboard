@@ -95,6 +95,7 @@ def update_overview(data_file, dataset):
     )
 
     booked_text = html.Div(
+        id='booked-text',
         children=f"{total_booked:,}",
         style=booked_position_style
     )
@@ -219,7 +220,12 @@ home_page_layout = html.Div(
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
-    html.Div(id='page-content')
+    html.Div(id='page-content'),
+    dcc.Interval(
+        id='interval-component',
+        interval=60*1000,  # Update every minute
+        n_intervals=0
+    )
 ])
 
 @app.callback(
@@ -233,6 +239,15 @@ def display_page(pathname):
         return update_event_view(data_file, dataset)
     else:
         return home_page_layout
+    
+@app.callback(
+    Output('booked-text', 'children'),
+    Input('interval-component', 'n_intervals')
+)
+def update_booked_value(n):
+    df = pd.read_csv(data_file)
+    total_booked = df["Rooms Booked"].sum()
+    return f"{total_booked:,}"
 
 @app.callback(
     Output('url', 'pathname'),
