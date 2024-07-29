@@ -87,7 +87,6 @@ def update_overview(data_file, dataset):
         'right': f'{booked_right_percent}%',
         'color': 'white',
         'font-size': '25px',
-        'transform': 'translate(0, 0)'  # No need for translation
     }
 
     forecast_text = html.Div(
@@ -200,12 +199,12 @@ home_page_layout = html.Div(
         html.Div(
             style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center', 'align-items': 'center'},
             children=[
-                html.Button("OVERVIEW", id='dashboard-button', n_clicks=0, 
+                html.Button("OVERVIEW", id='overview-button', n_clicks=0, 
                             style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
                                    'background-color': 'rgb(91, 169, 223)', 'border': 'none', 'border-radius': '25px'}),
                 html.Button("EVENT VIEW", id='event-view-button', n_clicks=0, 
                             style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
-                                   'background-color': 'rgb(91, 169, 223)', 'border': 'none', 'border-radius': '25px'}),     
+                                   'background-color': 'rgb(91, 169, 223)', 'border': 'none', 'border-radius': '25px'}),
             ]
         ),
         html.Div(
@@ -218,8 +217,6 @@ home_page_layout = html.Div(
     ]
 )
 
-event_view_layout = html.Div(id='event-view-content')
-
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
     html.Div(id='page-content')
@@ -230,25 +227,19 @@ app.layout = html.Div([
     Input('url', 'pathname')
 )
 def display_page(pathname):
-    if pathname == '/dashboard':
-        return html.Div([
-            update_overview(data_file, dataset),
-            dcc.Interval(
-                id='interval-component',
-                interval=60 * 1000,
-                n_intervals=0
-            )
-        ])
+    if pathname == '/overview':
+        return update_overview(data_file, dataset)
     elif pathname == '/event-view':
-        return event_view_layout
+        return update_event_view(data_file, dataset)
     else:
         return home_page_layout
 
 @app.callback(
     Output('url', 'pathname'),
-    [Input('dashboard-button', 'n_clicks'), Input('event-view-button', 'n_clicks')]
+    [Input('overview-button', 'n_clicks'),
+     Input('event-view-button', 'n_clicks')]
 )
-def go_to_page(dashboard_n_clicks, event_view_n_clicks):
+def go_to_page(overview_n_clicks, event_view_n_clicks):
     ctx = callback_context
 
     if not ctx.triggered:
@@ -256,8 +247,8 @@ def go_to_page(dashboard_n_clicks, event_view_n_clicks):
 
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    if button_id == 'dashboard-button' and dashboard_n_clicks > 0:
-        return '/dashboard'
+    if button_id == 'overview-button' and overview_n_clicks > 0:
+        return '/overview'
     elif button_id == 'event-view-button' and event_view_n_clicks > 0:
         return '/event-view'
     return '/'
@@ -278,16 +269,9 @@ def update_data_file(n_clicks):
         data_file = "../booking_data_sep_dec.csv"
         data_file_label = "September 2024 - December 2024"
         dataset = 'sep-dec'
+    
+    # Refresh the current page to reflect updated data
     return data_file_label
-
-@app.callback(
-    Output('event-view-content', 'children'),
-    Input('url', 'pathname')
-)
-def display_event_view(pathname):
-    if pathname == '/event-view':
-        return update_event_view(data_file, dataset)
-    return ""
 
 if __name__ == '__main__':
     app.run_server(debug=True, dev_tools_ui=False, host='0.0.0.0', port=8050)
