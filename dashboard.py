@@ -1,17 +1,13 @@
 import pandas as pd
 import math
 from dash import Dash, html, dcc, Input, Output, callback_context
+import dash_bootstrap_components as dbc
 
 # Define the colors for each combination of dataset and page index
 dataset_colors = {
     ('sep-dec'): 'rgb(91, 169, 223)',
     ('jan-apr'): 'rgb(233, 169, 91)'
 }
-
-# Global variables
-data_file = "../booking_data_sep_dec.csv"
-data_file_label = "September 2024 - December 2024"
-dataset = 'sep-dec'
 
 def calculate_grid_dimensions(total_forecast):
     aspect_ratio = 16 / 9
@@ -41,13 +37,11 @@ def calculate_quadrilateral_index(index, columns, rows):
 def fill_squares(forecast, booked, columns, rows, dataset, page):
     # Determine color based on dataset and page
     color = dataset_colors.get((dataset), 'grey')  # Default to grey if not found
-    
     if forecast > 25000:
         multiplier = 1
     else:
         total_squares = columns * rows
         multiplier = (total_squares // forecast) + 1
-    
     forecast = forecast * multiplier
     booked = booked * multiplier
     squares = [create_square('rgb(191, 191, 191)') for _ in range(forecast)]
@@ -68,6 +62,39 @@ def update_overview(data_file, dataset):
     columns, rows = calculate_grid_dimensions(total_forecast)
     squares = fill_squares(total_forecast, total_booked, columns, rows, dataset, 'overview')
 
+    # Calculate the percentage of rooms booked
+    booked_percentage = total_booked / total_forecast
+
+    # Calculate the dimensions of the booked area
+    booked_width = math.sqrt(booked_percentage * columns * rows * (16 / 9))
+    booked_height = booked_width * (9 / 16)
+
+    # Calculate the top-right position
+    booked_top = (rows - booked_height) * 1.05
+    booked_right = (columns - booked_width) * 1.05
+
+    # Convert to percentages
+    booked_top_percent = booked_top * 100 / rows + 1
+    booked_right_percent = booked_right * 100 / columns
+
+    booked_position_style = {
+        'position': 'absolute',
+        'top': f'{booked_top_percent}%',
+        'right': f'{booked_right_percent}%',
+        'color': 'white',
+        'font-size': '25px',
+    }
+
+    forecast_text = html.Div(
+        children=f"{total_forecast:,}",
+        style={'position': 'absolute', 'top': '10px', 'right': '10px', 'color': 'white', 'font-size': '25px'}
+    )
+
+    booked_text = html.Div(
+        children=f"{total_booked:,}",
+        style=booked_position_style
+    )
+
     return html.Div(
         style={'height': '100vh', 'width': '100vw', 'margin': '0', 'padding': '0'},
         children=[
@@ -87,7 +114,9 @@ def update_overview(data_file, dataset):
                     'height': '100%'
                 },
                 children=squares
-            )
+            ),
+            booked_text,  # Add the booked text to the layout
+            forecast_text  # Add the forecast text to the layout
         ]
     )
 
@@ -145,7 +174,8 @@ def update_event_view(data_file, dataset):
 
 app = Dash(__name__, external_stylesheets=[
     'https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap',
-    '/assets/styles.css'
+    '/assets/styles.css',
+    dbc.themes.BOOTSTRAP  # Include Bootstrap for better styling
 ])
 
 home_page_layout = html.Div(
@@ -154,24 +184,24 @@ home_page_layout = html.Div(
         html.Div(
             style={'position': 'absolute', 'top': '10px', 'left': '10px'},  # Adjusted position to top right corner
             children=[
-                html.Img(src="/assets/HotelMap-Logo-White.png", style={'height': '20px'})
+                html.Img(src="/assets/HotelMap-Logo-White.png", style={'height': '20px', 'width': 'auto'}),
             ]
         ),
         html.Div(
             style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center', 'align-items': 'center'},
             children=[
-                html.Img(src="/assets/vroom.png", style={'height': '120px', 'margin-bottom': '40px'}),
-            ]
-        ),
-        html.Div(
-            style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center', 'align-items': 'center'},
-            children=[
-                html.Button("OVERVIEW", id='dashboard-button', n_clicks=0, 
+                html.Button("OVERVIEW SEP-DEC", id='sep-dec-overview-button', n_clicks=0, 
                             style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
                                    'background-color': 'rgb(91, 169, 223)', 'border': 'none', 'border-radius': '25px'}),
-                html.Button("EVENT VIEW", id='event-view-button', n_clicks=0, 
+                html.Button("EVENT VIEW SEP-DEC", id='sep-dec-event-view-button', n_clicks=0, 
                             style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
-                                   'background-color': 'rgb(91, 169, 223)', 'border': 'none', 'border-radius': '25px'}),     
+                                   'background-color': 'rgb(91, 169, 223)', 'border': 'none', 'border-radius': '25px'}),
+                html.Button("OVERVIEW JAN-APR", id='jan-apr-overview-button', n_clicks=0, 
+                            style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
+                                   'background-color': 'rgb(233, 169, 91)', 'border': 'none', 'border-radius': '25px'}),
+                html.Button("EVENT VIEW JAN-APR", id='jan-apr-event-view-button', n_clicks=0, 
+                            style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
+                                   'background-color': 'rgb(233, 169, 91)', 'border': 'none', 'border-radius': '25px'}),
             ]
         ),
         html.Div(
@@ -184,37 +214,40 @@ home_page_layout = html.Div(
     ]
 )
 
-event_view_layout = html.Div(id='event-view-content')
-
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
-    html.Div(id='page-content')
+    html.Div(id='page-content', className='fade-in'),  # Initial page content class
 ])
 
 @app.callback(
-    Output('page-content', 'children'),
-    Input('url', 'pathname')
+    Output('page-content', 'children', allow_duplicate=True),
+    Output('page-content', 'className', allow_duplicate=True),
+    Input('url', 'pathname'),
+    prevent_initial_call='initial_duplicate'
 )
 def display_page(pathname):
-    if pathname == '/dashboard':
-        return html.Div([
-            update_overview(data_file, dataset),
-            dcc.Interval(
-                id='interval-component',
-                interval=60 * 1000,
-                n_intervals=0
-            )
-        ])
-    elif pathname == '/event-view':
-        return event_view_layout
+    if pathname == '/':
+        return home_page_layout, 'fade-in'
+
+    elif pathname == '/sep-dec-overview':
+        return update_overview("../booking_data_sep_dec.csv", 'sep-dec'), 'fade-in'
+    elif pathname == '/sep-dec-event-view':
+        return update_event_view("../booking_data_sep_dec.csv", 'sep-dec'), 'fade-in'
+    elif pathname == '/jan-apr-overview':
+        return update_overview("../booking_data_jan_apr.csv", 'jan-apr'), 'fade-in'
+    elif pathname == '/jan-apr-event-view':
+        return update_event_view("../booking_data_jan_apr.csv", 'jan-apr'), 'fade-in'
     else:
-        return home_page_layout
+        return home_page_layout, 'fade-in'
 
 @app.callback(
     Output('url', 'pathname'),
-    [Input('dashboard-button', 'n_clicks'), Input('event-view-button', 'n_clicks')]
+    [Input('sep-dec-overview-button', 'n_clicks'),
+     Input('sep-dec-event-view-button', 'n_clicks'),
+     Input('jan-apr-overview-button', 'n_clicks'),
+     Input('jan-apr-event-view-button', 'n_clicks')]
 )
-def go_to_page(dashboard_n_clicks, event_view_n_clicks):
+def go_to_page(sep_dec_overview_n_clicks, sep_dec_event_view_n_clicks, jan_apr_overview_n_clicks, jan_apr_event_view_n_clicks):
     ctx = callback_context
 
     if not ctx.triggered:
@@ -222,10 +255,14 @@ def go_to_page(dashboard_n_clicks, event_view_n_clicks):
 
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    if button_id == 'dashboard-button' and dashboard_n_clicks > 0:
-        return '/dashboard'
-    elif button_id == 'event-view-button' and event_view_n_clicks > 0:
-        return '/event-view'
+    if button_id == 'sep-dec-overview-button' and sep_dec_overview_n_clicks > 0:
+        return '/sep-dec-overview'
+    elif button_id == 'sep-dec-event-view-button' and sep_dec_event_view_n_clicks > 0:
+        return '/sep-dec-event-view'
+    elif button_id == 'jan-apr-overview-button' and jan_apr_overview_n_clicks > 0:
+        return '/jan-apr-overview'
+    elif button_id == 'jan-apr-event-view-button' and jan_apr_event_view_n_clicks > 0:
+        return '/jan-apr-event-view'
     return '/'
 
 @app.callback(
@@ -233,27 +270,12 @@ def go_to_page(dashboard_n_clicks, event_view_n_clicks):
     Input('calendar-view-button', 'n_clicks')
 )
 def update_data_file(n_clicks):
-    global data_file, data_file_label, dataset
     if n_clicks is None:
-        return data_file_label
+        return "Select a dataset view"
     elif n_clicks % 2 != 0:
-        data_file = "../booking_data_jan_apr.csv"
-        data_file_label = "January 2025 - April 2025"
-        dataset = 'jan-apr'
+        return "January 2025 - April 2025"
     else:
-        data_file = "../booking_data_sep_dec.csv"
-        data_file_label = "September 2024 - December 2024"
-        dataset = 'sep-dec'
-    return data_file_label
-
-@app.callback(
-    Output('event-view-content', 'children'),
-    Input('url', 'pathname')
-)
-def display_event_view(pathname):
-    if pathname == '/event-view':
-        return update_event_view(data_file, dataset)
-    return ""
+        return "September 2024 - December 2024"
 
 if __name__ == '__main__':
     app.run_server(debug=True, dev_tools_ui=False, host='0.0.0.0', port=8050)
