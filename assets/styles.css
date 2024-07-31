@@ -12,7 +12,7 @@ body {
 
 #square-container {
     display: grid;
-    gap: 0px; /* Add a gap between squares */
+    gap: 0px;
 }
 
 @keyframes fadeIn {
@@ -32,3 +32,22 @@ body {
   .fade-out {
     animation: fadeOut 1s forwards;
   }
+
+  button {
+    font-size: 20px;
+    padding: 15px 25px;
+    margin: 10px;
+    border: none;
+    border-radius: 25px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+button:active {
+    background-color: rgba(0, 0, 0, 0.8);
+}
