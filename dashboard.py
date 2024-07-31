@@ -1,17 +1,13 @@
 import pandas as pd
 import math
 from dash import Dash, html, dcc, Input, Output, callback_context
+import dash_bootstrap_components as dbc
 
 # Define the colors for each combination of dataset and page index
 dataset_colors = {
     ('sep-dec'): 'rgb(91, 169, 223)',
     ('jan-apr'): 'rgb(233, 169, 91)'
 }
-
-# Global variables
-data_file = "../booking_data_sep_dec.csv"
-data_file_label = "September 2024 - December 2024"
-dataset = 'sep-dec'
 
 def calculate_grid_dimensions(total_forecast):
     aspect_ratio = 16 / 9
@@ -179,7 +175,8 @@ def update_event_view(data_file, dataset):
 
 app = Dash(__name__, external_stylesheets=[
     'https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap',
-    '/assets/styles.css'
+    '/assets/styles.css',
+     dbc.themes.BOOTSTRAP
 ])
 
 home_page_layout = html.Div(
@@ -200,19 +197,21 @@ home_page_layout = html.Div(
         html.Div(
             style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center', 'align-items': 'center'},
             children=[
-                html.Button("OVERVIEW", id='overview-button', n_clicks=0, 
+                html.Button("OVERVIEW SEP-DEC", id='sep-dec-overview-button', n_clicks=0, 
                             style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
                                    'background-color': 'rgb(91, 169, 223)', 'border': 'none', 'border-radius': '25px'}),
-                html.Button("EVENT VIEW", id='event-view-button', n_clicks=0, 
+                html.Button("EVENT VIEW SEP-DEC", id='sep-dec-event-view-button', n_clicks=0, 
                             style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
                                    'background-color': 'rgb(91, 169, 223)', 'border': 'none', 'border-radius': '25px'}),
-            ]
-        ),
-        html.Div(
-            style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center', 'align-items': 'center', 'margin-top': '20px'},
-            children=[
-                html.Img(src="assets/calendar.png", id='calendar-view-button', n_clicks=0, style={"height": "50px", "margin-right": "10px"}),
-                html.H3(id='data-file-label', style={"color": "white", "margin": "0"})
+                html.Button("OVERVIEW JAN-APR", id='jan-apr-overview-button', n_clicks=0, 
+                            style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
+                                   'background-color': 'rgb(233, 169, 91)', 'border': 'none', 'border-radius': '25px'}),
+                html.Button("EVENT VIEW JAN-APR", id='jan-apr-event-view-button', n_clicks=0, 
+                            style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
+                                   'background-color': 'rgb(233, 169, 91)', 'border': 'none', 'border-radius': '25px'}),
+                html.Button("CYCLE", id='cycle-button', n_clicks=0, 
+                            style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
+                                   'background-color': 'green', 'border': 'none', 'border-radius': '25px'})
             ]
         ),
     ]
@@ -220,7 +219,10 @@ home_page_layout = html.Div(
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
-    html.Div(id='page-content'),
+    dcc.Store(id='current-dataset', data=''),  # Store to keep track of the current dataset
+    dcc.Store(id='current-page-index', data=0),  # Store to keep track of the current page index
+    dcc.Store(id='cycle-started', data=False),  # Store to track if cycling has started
+    html.Div(id='page-content', className='fade-in'),
     dcc.Interval(
         id='interval-component',
         interval=60*1000,  # Update every minute
@@ -229,32 +231,45 @@ app.layout = html.Div([
 ])
 
 @app.callback(
-    Output('page-content', 'children'),
-    Input('url', 'pathname')
+    Output('page-content', 'children', allow_duplicate=True),
+    Output('page-content', 'className', allow_duplicate=True),
+    Output('current-dataset', 'data', allow_duplicate=True),
+    Input('url', 'pathname'),
+    prevent_initial_call='initial_duplicate'
 )
 def display_page(pathname):
-    if pathname == '/overview':
-        return update_overview(data_file, dataset)
-    elif pathname == '/event-view':
-        return update_event_view(data_file, dataset)
+    if pathname == '/':
+        return home_page_layout, 'fade-in', ''
+
+    elif pathname == '/sep-dec-overview':
+        return update_overview("../booking_data_sep_dec.csv", 'sep-dec'), 'fade-in', '../booking_data_sep_dec.csv'
+    elif pathname == '/sep-dec-event-view':
+        return update_event_view("../booking_data_sep_dec.csv", 'sep-dec'), 'fade-in', '../booking_data_sep_dec.csv'
+    elif pathname == '/jan-apr-overview':
+        return update_overview("../booking_data_jan_apr.csv", 'jan-apr'), 'fade-in', '../booking_data_jan_apr.csv'
+    elif pathname == '/jan-apr-event-view':
+        return update_event_view("../booking_data_jan_apr.csv", 'jan-apr'), 'fade-in', '../booking_data_jan_apr.csv'
     else:
-        return home_page_layout
+        return home_page_layout, 'fade-in', ''
     
 @app.callback(
     Output('booked-text', 'children'),
-    Input('interval-component', 'n_intervals')
+    Input('interval-component', 'n_intervals'),
+    Input('current-dataset', 'data')
 )
-def update_booked_value(n):
+def update_booked_value(n, data_file):
     df = pd.read_csv(data_file)
     total_booked = df["Rooms Booked"].sum()
     return f"{total_booked:,}"
 
 @app.callback(
     Output('url', 'pathname'),
-    [Input('overview-button', 'n_clicks'),
-     Input('event-view-button', 'n_clicks')]
+    [Input('sep-dec-overview-button', 'n_clicks'),
+     Input('sep-dec-event-view-button', 'n_clicks'),
+     Input('jan-apr-overview-button', 'n_clicks'),
+     Input('jan-apr-event-view-button', 'n_clicks')]
 )
-def go_to_page(overview_n_clicks, event_view_n_clicks):
+def go_to_page(sep_dec_overview_n_clicks, sep_dec_event_view_n_clicks, jan_apr_overview_n_clicks, jan_apr_event_view_n_clicks):
     ctx = callback_context
 
     if not ctx.triggered:
@@ -262,31 +277,48 @@ def go_to_page(overview_n_clicks, event_view_n_clicks):
 
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    if button_id == 'overview-button' and overview_n_clicks > 0:
-        return '/overview'
-    elif button_id == 'event-view-button' and event_view_n_clicks > 0:
-        return '/event-view'
+    if button_id == 'sep-dec-overview-button' and sep_dec_overview_n_clicks > 0:
+        return '/sep-dec-overview'
+    elif button_id == 'sep-dec-event-view-button' and sep_dec_event_view_n_clicks > 0:
+        return '/sep-dec-event-view'
+    elif button_id == 'jan-apr-overview-button' and jan_apr_overview_n_clicks > 0:
+        return '/jan-apr-overview'
+    elif button_id == 'jan-apr-event-view-button' and jan_apr_event_view_n_clicks > 0:
+        return '/jan-apr-event-view'
     return '/'
 
 @app.callback(
-    Output('data-file-label', 'children'),
-    Input('calendar-view-button', 'n_clicks')
+    Output('url', 'pathname', allow_duplicate=True),
+    Output('current-page-index', 'data', allow_duplicate=True),
+    Input('interval-component', 'n_intervals'),
+    Input('current-page-index', 'data'),
+    Input('cycle-started', 'data'),
+    prevent_initial_call='initial_duplicate'
 )
-def update_data_file(n_clicks):
-    global data_file, data_file_label, dataset
-    if n_clicks is None:
-        return data_file_label
-    elif n_clicks % 2 != 0:
-        data_file = "../booking_data_jan_apr.csv"
-        data_file_label = "January 2025 - April 2025"
-        dataset = 'jan-apr'
-    else:
-        data_file = "../booking_data_sep_dec.csv"
-        data_file_label = "September 2024 - December 2024"
-        dataset = 'sep-dec'
-    
-    # Refresh the current page to reflect updated data
-    return data_file_label
+def cycle_pages(n_intervals, current_page_index, cycle_started):
+    if not cycle_started:
+        return dash.no_update, dash.no_update
+
+    pages = [
+        '/sep-dec-overview',
+        '/sep-dec-event-view',
+        '/jan-apr-overview',
+        '/jan-apr-event-view'
+    ]
+
+    next_page_index = (current_page_index + 1) % len(pages)
+    next_page = pages[next_page_index]
+
+    return next_page, next_page_index
+
+@app.callback(
+    Output('cycle-started', 'data'),
+    Input('cycle-button', 'n_clicks')
+)
+def start_cycle(n_clicks):
+    if n_clicks > 0:
+        return True
+    return False
 
 if __name__ == '__main__':
     app.run_server(debug=True, dev_tools_ui=False, host='0.0.0.0', port=8050)
