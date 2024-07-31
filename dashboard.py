@@ -5,8 +5,8 @@ import dash_bootstrap_components as dbc
 
 # Define the colors for each combination of dataset and page index
 dataset_colors = {
-    ('sep-dec'): 'rgb(91, 169, 223)',
-    ('jan-apr'): 'rgb(233, 169, 91)'
+    'sep-dec': 'rgb(91, 169, 223)',
+    'jan-apr': 'rgb(233, 169, 91)'
 }
 
 def calculate_grid_dimensions(total_forecast):
@@ -16,10 +16,9 @@ def calculate_grid_dimensions(total_forecast):
     height = math.ceil(sqrt_total / math.sqrt(aspect_ratio))
     return width, height
 
-def create_square(color, is_booked=False):
-    classes = 'square ' + ('filled' if color == 'black' else '')
+def create_square(color):
     return html.Div(
-        className=classes,
+        className='square filled' if color == 'black' else 'square',
         style={
             'background-color': color,
             'border': '0',
@@ -34,24 +33,20 @@ def calculate_quadrilateral_index(index, columns, rows):
     row = min(row, max_row)
     return (rows - 1 - row) * columns + col
 
-def fill_squares(forecast, booked, columns, rows, dataset, page):
-    # Determine color based on dataset and page
-    color = dataset_colors.get((dataset), 'grey')  # Default to grey if not found
+def fill_squares(forecast, booked, columns, rows, dataset):
+    color = dataset_colors.get(dataset, 'grey')
     if forecast > 25000:
         multiplier = 1
     else:
         total_squares = columns * rows
         multiplier = (total_squares // forecast) + 1
-    forecast = forecast * multiplier
-    booked = booked * multiplier
+    forecast *= multiplier
+    booked *= multiplier
     squares = [create_square('rgb(191, 191, 191)') for _ in range(forecast)]
     filled_indices = sorted(range(forecast), key=lambda i: calculate_quadrilateral_index(i, columns, rows))
     
     for i in range(min(booked, forecast)):
-        if i < min(booked, forecast):
-            squares[filled_indices[i]] = create_square(color, is_booked=True)
-        else:
-            squares[filled_indices[i]] = create_square(color)
+        squares[filled_indices[i]] = create_square(color)
     
     return squares
 
@@ -60,27 +55,18 @@ def update_overview(data_file, dataset):
     total_forecast = df["Forecast"].sum()
     total_booked = df["Rooms Booked"].sum()
     columns, rows = calculate_grid_dimensions(total_forecast)
-    squares = fill_squares(total_forecast, total_booked, columns, rows, dataset, 'overview')
+    squares = fill_squares(total_forecast, total_booked, columns, rows, dataset)
 
-    # Calculate the percentage of rooms booked
     booked_percentage = total_booked / total_forecast
-
-    # Calculate the dimensions of the booked area
     booked_width = math.sqrt(booked_percentage * columns * rows * (16 / 9))
     booked_height = booked_width * (9 / 16)
-
-    # Calculate the top-right position
     booked_top = (rows - booked_height) * 1.05
     booked_right = (columns - booked_width) * 1.05
 
-    # Convert to percentages
-    booked_top_percent = booked_top * 100 / rows + 1
-    booked_right_percent = booked_right * 100 / columns
-
     booked_position_style = {
         'position': 'absolute',
-        'top': f'{booked_top_percent}%',
-        'right': f'{booked_right_percent}%',
+        'top': f'{booked_top * 100 / rows + 1}%',
+        'right': f'{booked_right * 100 / columns}%',
         'color': 'white',
         'font-size': '25px',
     }
@@ -116,8 +102,8 @@ def update_overview(data_file, dataset):
                 },
                 children=squares
             ),
-            booked_text,  # Add the booked text to the layout
-            forecast_text  # Add the forecast text to the layout
+            booked_text,  
+            forecast_text  
         ]
     )
 
@@ -134,19 +120,17 @@ def update_event_view(data_file, dataset):
         event_forecast = event_data.loc[idx, "Forecast"]
         event_booked = event_data.loc[idx, "Rooms Booked"]
         columns, rows = calculate_grid_dimensions(event_forecast)
-        squares = fill_squares(event_forecast, event_booked, columns, rows, dataset, 'event-view')
-
-        event_view_style = {
-            'border': '2px solid white',
-            'display': 'grid',
-            'grid-template-columns': f'repeat({columns}, 1fr)',
-            'grid-template-rows': f'repeat({rows}, 1fr)',
-            'width': f'100vw/15',   # Adjust width based on number of columns
-            'height': f'100vh/10'    # Adjust height based on number of rows
-        }
+        squares = fill_squares(event_forecast, event_booked, columns, rows, dataset)
 
         event_view = html.Div(
-            style=event_view_style,
+            style={
+                'border': '2px solid white',
+                'display': 'grid',
+                'grid-template-columns': f'repeat({columns}, 1fr)',
+                'grid-template-rows': f'repeat({rows}, 1fr)',
+                'width': f'100vw/15',   
+                'height': f'100vh/10'
+            },
             children=squares
         )
 
@@ -154,13 +138,13 @@ def update_event_view(data_file, dataset):
 
     return html.Div(
         style={
-            'height': '100vh',  # Ensure full viewport height
-            'width': '100vw',   # Ensure full viewport width
+            'height': '100vh',
+            'width': '100vw',
             'margin': '0',
             'padding': '0',
-            'display': 'grid',  # Use grid display for event views
-            'grid-template-columns': f'repeat({max_columns}, 1fr)',  # Set exactly 13 columns
-            'grid-template-rows': f'repeat({max_rows}, 1fr)'         # Set exactly 12 rows
+            'display': 'grid',
+            'grid-template-columns': f'repeat({max_columns}, 1fr)',
+            'grid-template-rows': f'repeat({max_rows}, 1fr)'
         },
         children=[
             html.Div(
@@ -183,7 +167,7 @@ home_page_layout = html.Div(
     style={'height': '100vh', 'display': 'flex', 'flex-direction': 'column', 'justify-content': 'center', 'align-items': 'center'},
     children=[
         html.Div(
-            style={'position': 'absolute', 'top': '10px', 'left': '10px'},  # Adjusted position to top right corner
+            style={'position': 'absolute', 'top': '10px', 'left': '10px'},
             children=[
                 html.Img(src="/assets/HotelMap-Logo-White.png", style={'height': '20px'})
             ]
@@ -209,7 +193,12 @@ home_page_layout = html.Div(
                 html.Button("EVENT VIEW JAN-APR", id='jan-apr-event-view-button', n_clicks=0, 
                             style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
                                    'background-color': 'rgb(233, 169, 91)', 'border': 'none', 'border-radius': '25px'}),
-                html.Button("CYCLE", id='cycle-button', n_clicks=0, 
+                ]
+        ),
+        html.Div(
+            style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center', 'align-items': 'center'},
+            children=[
+                html.Button("CYCLE VIEWS", id='cycle-button', n_clicks=0, 
                             style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
                                    'background-color': 'green', 'border': 'none', 'border-radius': '25px'})
             ]
@@ -297,7 +286,7 @@ def go_to_page(sep_dec_overview_n_clicks, sep_dec_event_view_n_clicks, jan_apr_o
 )
 def cycle_pages(n_intervals, current_page_index, cycle_started):
     if not cycle_started:
-        return dash.no_update, dash.no_update
+        return Dash.no_update, Dash.no_update
 
     pages = [
         '/sep-dec-overview',
