@@ -65,7 +65,7 @@ def create_banner(title, date_range, color):
             'top': '0',
             'left': '0',
             'box-shadow': f'0 5px 5px {color}',
-            'z-index': '1000'
+            'z-index': '2'
         }
     )
 
@@ -151,10 +151,11 @@ def update_event_view(data_file, dataset):
         'jan-apr': 'January - April 2025'
     }.get(dataset, 'Unknown Period')
 
-    # Define the banner text and color
     banner_color = dataset_colors.get(dataset, 'grey')
+    pop_up_border_color = banner_color
 
     for idx in range(total_events):
+        event_name = event_data.loc[idx, "Event Name"]
         event_forecast = event_data.loc[idx, "Forecast"]
         event_booked = event_data.loc[idx, "Rooms Booked"]
         columns, rows = calculate_grid_dimensions(event_forecast)
@@ -169,8 +170,22 @@ def update_event_view(data_file, dataset):
                 'grid-template-rows': f'repeat({rows}, 1fr)',
                 'width': '100%',
                 'height': '100%',
+                'position': 'relative',
             },
-            children=squares
+            children=[
+                *squares,
+                html.Div(
+                    className='pop-up',
+                    style={
+                        'border': f'3px solid {pop_up_border_color}'
+                    },
+                    children=[
+                        html.H4(event_name),
+                        html.P(f"Forecast: {event_forecast}"),
+                        html.P(f"Booked: {event_booked}")
+                    ]
+                )
+            ]
         )
 
         event_views.append(event_view)
