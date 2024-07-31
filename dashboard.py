@@ -89,8 +89,8 @@ def update_overview(data_file, dataset):
 
     booked_position_style = {
         'position': 'absolute',
-        'top': f'{booked_top * 100 / rows + 4}%',
-        'right': f'{booked_right * 100 / columns - 1}%',
+        'top': f'{booked_top * 100 / rows + 3}%',
+        'right': f'{booked_right * 100 / columns}%',
         'color': 'white',
         'font-size': '25px',
     }
@@ -142,8 +142,8 @@ def update_event_view(data_file, dataset):
     event_data = df.groupby("Event Name").agg({"Forecast": "sum", "Rooms Booked": "sum"}).reset_index()
     total_events = len(event_data)
 
-    max_rows = 15 #if horizontal this needs changing!
-    max_columns = int(total_events / max_rows)
+    max_rows = 15
+    max_columns = int(total_events / max_rows) + (total_events % max_rows > 0)
     event_views = []
 
     date_range = {
@@ -161,6 +161,31 @@ def update_event_view(data_file, dataset):
         columns, rows = calculate_grid_dimensions(event_forecast)
         squares = fill_squares(event_forecast, event_booked, columns, rows, dataset)
 
+        # Determine the current column position for the pop-up
+        current_col = idx % max_columns
+        pop_up_style = {
+            'border': f'3px solid {pop_up_border_color}',
+            'position': 'absolute',
+            'top': '-25px',
+            'left': '100%',  # Default position to the right
+            'margin-left': '10px',  # Space between the event box and pop-up
+            'width': '180px',
+            'padding': '10px',
+            'background-color': 'white',
+            'border': '1px solid #ccc',
+            'border-radius': '8px',
+            'box-shadow': '0 4px 12px rgba(0, 0, 0, 0.1)',
+            'z-index': '20',
+            'font-family': 'Lato, sans-serif'
+        }
+
+        # If the event-box is in column 7 or beyond, adjust the pop-up position to the left
+        if current_col >= 7:
+            pop_up_style['left'] = 'auto'
+            pop_up_style['right'] = '100%'
+            pop_up_style['margin-right'] = '10px'
+            pop_up_style.pop('margin-left', None)  # Remove the left margin
+
         event_view = html.Div(
             id='event-box',
             style={
@@ -176,9 +201,7 @@ def update_event_view(data_file, dataset):
                 *squares,
                 html.Div(
                     className='pop-up',
-                    style={
-                        'border': f'3px solid {pop_up_border_color}'
-                    },
+                    style=pop_up_style,
                     children=[
                         html.H4(event_name),
                         html.P(f"Forecast: {event_forecast}"),
@@ -199,8 +222,8 @@ def update_event_view(data_file, dataset):
             'display': 'grid',
             'grid-template-columns': f'repeat({max_columns}, 1fr)',
             'grid-template-rows': f'repeat({max_rows}, 1fr)',
-            'gap': '0px',  # Add some spacing between event views
-            'padding-top': '50px'  # Space for the banner
+            'gap': '0px',
+            'padding-top': '50px'
         },
         children=[
             create_banner("Event View", date_range, banner_color),
