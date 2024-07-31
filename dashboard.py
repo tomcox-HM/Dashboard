@@ -142,7 +142,7 @@ def update_event_view(data_file, dataset):
     event_data = df.groupby("Event Name").agg({"Forecast": "sum", "Rooms Booked": "sum"}).reset_index()
     total_events = len(event_data)
 
-    max_rows = 10
+    max_rows = 15 #if horizontal this needs changing!
     max_columns = int(total_events / max_rows)
     event_views = []
 
