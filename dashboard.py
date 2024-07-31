@@ -3,7 +3,6 @@ import math
 from dash import Dash, html, dcc, Input, Output, callback_context
 import dash_bootstrap_components as dbc
 
-# Define the colors for each combination of dataset and page index
 dataset_colors = {
     'sep-dec': 'rgb(91, 169, 223)',
     'jan-apr': 'rgb(233, 169, 91)'
@@ -50,12 +49,38 @@ def fill_squares(forecast, booked, columns, rows, dataset):
     
     return squares
 
+def create_banner(title, date_range, color):
+    banner_text = f"{title}: {date_range}"
+    return html.Div(
+        children=banner_text,
+        style={
+            'background-color': 'white',
+            'color': color,
+            'text-align': 'right',
+            'padding': '5px',
+            'font-size': '25px',
+            'font-weight': 'bold',
+            'width': '100%',
+            'position': 'fixed',
+            'top': '0',
+            'left': '0',
+            'box-shadow': '0 2px 5px rgba(0, 0, 0, 0.1)',
+            'z-index': '1000'
+        }
+    )
+
+
 def update_overview(data_file, dataset):
     df = pd.read_csv(data_file)
     total_forecast = df["Forecast"].sum()
     total_booked = df["Rooms Booked"].sum()
     columns, rows = calculate_grid_dimensions(total_forecast)
     squares = fill_squares(total_forecast, total_booked, columns, rows, dataset)
+
+    date_range = {
+        'sep-dec': 'September - December 2024',
+        'jan-apr': 'January - April 2025'
+    }.get(dataset, 'Unknown Period')
 
     booked_percentage = total_booked / total_forecast
     booked_width = math.sqrt(booked_percentage * columns * rows * (16 / 9))
@@ -65,15 +90,15 @@ def update_overview(data_file, dataset):
 
     booked_position_style = {
         'position': 'absolute',
-        'top': f'{booked_top * 100 / rows + 1}%',
-        'right': f'{booked_right * 100 / columns}%',
+        'top': f'{booked_top * 100 / rows + 4}%',
+        'right': f'{booked_right * 100 / columns - 1}%',
         'color': 'white',
         'font-size': '25px',
     }
 
     forecast_text = html.Div(
         children=f"{total_forecast:,}",
-        style={'position': 'absolute', 'top': '10px', 'right': '10px', 'color': 'white', 'font-size': '25px'}
+        style={'position': 'absolute', 'top': '50px', 'right': '10px', 'color': 'white', 'font-size': '25px', 'z-index': '1001'}
     )
 
     booked_text = html.Div(
@@ -82,11 +107,14 @@ def update_overview(data_file, dataset):
         style=booked_position_style
     )
 
+    banner_color = dataset_colors.get(dataset, 'grey')
+
     return html.Div(
-        style={'height': '100vh', 'width': '100vw', 'margin': '0', 'padding': '0'},
+        style={'position': 'relative', 'height': '100vh', 'overflow': 'hidden'},
         children=[
+            create_banner("Overview", date_range, banner_color),
             html.Div(
-                style={'position': 'absolute', 'bottom': '10px', 'left': '10px'},
+                style={'position': 'absolute', 'bottom': '20px', 'left': '10px', 'z-index': '1001'},
                 children=[
                     dcc.Link(html.Img(src="/assets/home.png", id='home-button', style={'cursor': 'pointer', 'height': '40px'}), href='/')
                 ]
@@ -98,7 +126,10 @@ def update_overview(data_file, dataset):
                     'grid-template-columns': f'repeat({columns}, 1fr)',
                     'grid-template-rows': f'repeat({rows}, 1fr)',
                     'width': '100%',
-                    'height': '100%'
+                    'height': 'calc(100vh - 60px)',  # Adjust height to account for the banner
+                    'position': 'absolute',
+                    'top': '50px',  # Position below the banner
+                    'left': '0'
                 },
                 children=squares
             ),
@@ -116,6 +147,14 @@ def update_event_view(data_file, dataset):
     max_columns = int(total_events / max_rows)
     event_views = []
 
+    date_range = {
+        'sep-dec': 'September - December 2024',
+        'jan-apr': 'January - April 2025'
+    }.get(dataset, 'Unknown Period')
+
+    # Define the banner text and color
+    banner_color = dataset_colors.get(dataset, 'grey')
+
     for idx in range(total_events):
         event_forecast = event_data.loc[idx, "Forecast"]
         event_booked = event_data.loc[idx, "Rooms Booked"]
@@ -128,8 +167,8 @@ def update_event_view(data_file, dataset):
                 'display': 'grid',
                 'grid-template-columns': f'repeat({columns}, 1fr)',
                 'grid-template-rows': f'repeat({rows}, 1fr)',
-                'width': f'100vw/15',   
-                'height': f'100vh/10'
+                'width': '100%',
+                'height': '100%',  # Full height for each event view
             },
             children=squares
         )
@@ -139,14 +178,17 @@ def update_event_view(data_file, dataset):
     return html.Div(
         style={
             'height': '100vh',
-            'width': '100vw',
-            'margin': '0',
-            'padding': '0',
+            'width': '100%',
+            'position': 'relative',
+            'overflow': 'hidden',
             'display': 'grid',
             'grid-template-columns': f'repeat({max_columns}, 1fr)',
-            'grid-template-rows': f'repeat({max_rows}, 1fr)'
+            'grid-template-rows': f'repeat({max_rows}, 1fr)',
+            'gap': '0px',  # Add some spacing between event views
+            'padding-top': '50px'  # Space for the banner
         },
         children=[
+            create_banner("Event View", date_range, banner_color),
             html.Div(
                 style={'position': 'absolute', 'bottom': '10px', 'left': '10px'},
                 children=[
@@ -160,7 +202,7 @@ def update_event_view(data_file, dataset):
 app = Dash(__name__, external_stylesheets=[
     'https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap',
     '/assets/styles.css',
-     dbc.themes.BOOTSTRAP
+    dbc.themes.BOOTSTRAP
 ])
 
 home_page_layout = html.Div(
@@ -193,7 +235,7 @@ home_page_layout = html.Div(
                 html.Button("EVENT VIEW JAN-APR", id='jan-apr-event-view-button', n_clicks=0, 
                             style={'font-size': '20px', 'padding': '15px 25px', 'margin': '10px', 'color': 'white', 
                                    'background-color': 'rgb(233, 169, 91)', 'border': 'none', 'border-radius': '25px'}),
-                ]
+            ]
         ),
         html.Div(
             style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center', 'align-items': 'center'},
