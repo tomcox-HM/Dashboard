@@ -15,25 +15,35 @@ body {
     gap: 0px;
 }
 
+#event-box {
+    transition: transform 0.3s ease;
+    background-color: rgb(191, 191, 191);
+}
+
+#event-box:hover {
+    transform: scale(1.4);
+    z-index: 10;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
-  }
+}
   
   @keyframes fadeOut {
     from { opacity: 1; }
     to { opacity: 0; }
-  }
+}
   
-  .fade-in {
+.fade-in {
     animation: fadeIn 1s forwards;
-  }
-  
-  .fade-out {
-    animation: fadeOut 1s forwards;
-  }
+}
 
-  button {
+.fade-out {
+    animation: fadeOut 1s forwards;
+}
+
+button {
     font-size: 20px;
     padding: 15px 25px;
     margin: 10px;
@@ -45,9 +55,19 @@ body {
 }
 
 button:hover {
-    transform: scale(1.05);
+    transform: scale(1.10);
 }
 
-button:active {
-    background-color: rgba(0, 0, 0, 0.8);
+#home-button {
+    transition: transform 0.3s ease;
+    position: absolute;
+    z-index: 100;
+    cursor: pointer;
+    height: 50px;
+    bottom: 5px;
+    left: 5px
+}
+
+#home-button:hover {
+    transform: scale(1.4);
 }

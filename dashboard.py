@@ -64,11 +64,10 @@ def create_banner(title, date_range, color):
             'position': 'fixed',
             'top': '0',
             'left': '0',
-            'box-shadow': '0 2px 5px rgba(0, 0, 0, 0.1)',
+            'box-shadow': f'0 5px 5px {color}',
             'z-index': '1000'
         }
     )
-
 
 def update_overview(data_file, dataset):
     df = pd.read_csv(data_file)
@@ -162,13 +161,14 @@ def update_event_view(data_file, dataset):
         squares = fill_squares(event_forecast, event_booked, columns, rows, dataset)
 
         event_view = html.Div(
+            id='event-box',
             style={
                 'border': '2px solid white',
                 'display': 'grid',
                 'grid-template-columns': f'repeat({columns}, 1fr)',
                 'grid-template-rows': f'repeat({rows}, 1fr)',
                 'width': '100%',
-                'height': '100%',  # Full height for each event view
+                'height': '100%',
             },
             children=squares
         )
@@ -192,7 +192,7 @@ def update_event_view(data_file, dataset):
             html.Div(
                 style={'position': 'absolute', 'bottom': '10px', 'left': '10px'},
                 children=[
-                    dcc.Link(html.Img(src="/assets/home.png", id='home-button', style={'cursor': 'pointer', 'height': '40px'}), href='/')
+                    dcc.Link(html.Img(src="/assets/home.png", id='home-button'), href='/')
                 ]
             ),
             *event_views
