@@ -125,9 +125,9 @@ def update_overview(data_file, dataset):
                     'grid-template-columns': f'repeat({columns}, 1fr)',
                     'grid-template-rows': f'repeat({rows}, 1fr)',
                     'width': '100%',
-                    'height': 'calc(100vh - 60px)',  # Adjust height to account for the banner
+                    'height': 'calc(100vh - 60px)',
                     'position': 'absolute',
-                    'top': '50px',  # Position below the banner
+                    'top': '50px',
                     'left': '0'
                 },
                 children=squares
@@ -142,7 +142,7 @@ def update_event_view(data_file, dataset):
     event_data = df.groupby("Event Name").agg({"Forecast": "sum", "Rooms Booked": "sum"}).reset_index()
     total_events = len(event_data)
 
-    max_rows = 15
+    max_rows = 10
     max_columns = int(total_events / max_rows) + (total_events % max_rows > 0)
     event_views = []
 
@@ -187,7 +187,7 @@ def update_event_view(data_file, dataset):
             pop_up_style.pop('margin-left', None)  # Remove the left margin
 
         event_view = html.Div(
-            id='event-box',
+            className='event-box',  # Changed from id to class
             style={
                 'border': '2px solid white',
                 'display': 'grid',
@@ -195,7 +195,7 @@ def update_event_view(data_file, dataset):
                 'grid-template-rows': f'repeat({rows}, 1fr)',
                 'width': '100%',
                 'height': '100%',
-                'position': 'relative',
+                'position': 'relative',  # Ensures the pop-up is correctly positioned
             },
             children=[
                 *squares,
@@ -210,7 +210,6 @@ def update_event_view(data_file, dataset):
                 )
             ]
         )
-
         event_views.append(event_view)
 
     return html.Div(

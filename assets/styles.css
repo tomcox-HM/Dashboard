@@ -15,12 +15,13 @@ body {
     gap: 0px;
 }
 
-#event-box {
+.event-box {
     transition: transform 0.3s ease;
     background-color: rgb(191, 191, 191);
+    position: relative; /* Ensure relative positioning for the pop-up */
 }
 
-#event-box:hover {
+.event-box:hover {
     transform: scale(1.4);
     z-index: 10;
 }
@@ -41,7 +42,7 @@ body {
     font-family: 'Lato', sans-serif;
 }
 
-#event-box:hover .pop-up {
+.event-box:hover .pop-up {
     display: block;
 }
 
@@ -62,12 +63,12 @@ body {
     from { opacity: 0; }
     to { opacity: 1; }
 }
-  
-  @keyframes fadeOut {
+
+@keyframes fadeOut {
     from { opacity: 1; }
     to { opacity: 0; }
 }
-  
+
 .fade-in {
     animation: fadeIn 1s forwards;
 }
@@ -98,7 +99,7 @@ button:hover {
     cursor: pointer;
     height: 50px;
     bottom: 5px;
-    left: 5px
+    left: 5px;
 }
 
 #home-button:hover {
