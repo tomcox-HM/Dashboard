@@ -139,7 +139,7 @@ def update_overview(data_file, dataset):
 
 def update_event_view(data_file, dataset):
     df = pd.read_csv(data_file)
-    event_data = df.groupby("Event Name").agg({"Forecast": "sum", "Rooms Booked": "sum"}).reset_index()
+    event_data = df.groupby("Event Name").agg({"Forecast": "sum", "Rooms Booked": "sum","Attendees": "sum", "Registrants": "sum", "Visits": "sum"}).reset_index()
     total_events = len(event_data)
 
     max_rows = 15
@@ -158,6 +158,9 @@ def update_event_view(data_file, dataset):
         event_name = event_data.loc[idx, "Event Name"]
         event_forecast = event_data.loc[idx, "Forecast"]
         event_booked = event_data.loc[idx, "Rooms Booked"]
+        attendees = event_data.loc[idx, "Attendees"]
+        registrants = event_data.loc[idx, "Registrants"]
+        visits = event_data.loc[idx, "Visits"]
         columns, rows = calculate_grid_dimensions(event_forecast)
         squares = fill_squares(event_forecast, event_booked, columns, rows, dataset)
 
@@ -205,7 +208,10 @@ def update_event_view(data_file, dataset):
                     children=[
                         html.H4(event_name),
                         html.P(f"Forecast: {event_forecast}"),
-                        html.P(f"Booked: {event_booked}")
+                        html.P(f"Booked: {event_booked}"),
+                        html.P(f"Attendees: {attendees}"),
+                        html.P(f"Registrants: {int(registrants)}"),
+                        html.P(f"Visits: {visits}"),
                     ]
                 )
             ]
